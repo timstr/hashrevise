@@ -213,6 +213,17 @@ where
     }
 }
 
+/// Vec<T> where T is Revisable is also Revisable
+impl<T> Revisable for Vec<T>
+where
+    T: Revisable,
+{
+    fn get_revision(&self) -> RevisionHash {
+        let s: &[T] = self;
+        s.get_revision()
+    }
+}
+
 /// HashMap<K, T> where K and T are both Revisable is also Revisable
 impl<K, T> Revisable for HashMap<K, T>
 where
