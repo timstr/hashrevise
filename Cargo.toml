@@ -2,6 +2,11 @@
 name = "revise"
 version = "0.1.0"
 edition = "2021"
+authors = ["Tim Straubinger"]
+description = "A Rust library for hashing data structures and then caching results and avoiding work."
+repository = "https://github.com/timstr/revise"
+license = "MIT"
+keywords = ["hashing", "caching", "lazy"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

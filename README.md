@@ -1,6 +1,6 @@
 # revise
 
-A Rust library for hashing data structures and then caching results and avoiding work
+A Rust library for hashing data structures and then caching results and avoiding work.
 
 ---
 
