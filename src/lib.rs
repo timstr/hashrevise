@@ -79,6 +79,46 @@ pub trait Revisable {
     fn get_revision(&self) -> RevisionHash;
 }
 
+/// Helper macro for abbreviating Revisable implementations for plain types
+macro_rules! revisable_impl {
+    ($typename: ident, $hasher_fn: expr) => {
+        impl Revisable for $typename {
+            fn get_revision(&self) -> RevisionHash {
+                let mut hasher = RevisionHasher::new();
+                $hasher_fn(&mut hasher, self);
+                hasher.into_revision()
+            }
+        }
+    };
+}
+
+revisable_impl!(bool, |hasher: &mut RevisionHasher, x: &bool| hasher
+    .write_u8(*x as _));
+revisable_impl!(u8, |hasher: &mut RevisionHasher, x: &u8| hasher
+    .write_u8(*x));
+revisable_impl!(u16, |hasher: &mut RevisionHasher, x: &u16| hasher
+    .write_u16(*x));
+revisable_impl!(u32, |hasher: &mut RevisionHasher, x: &u32| hasher
+    .write_u32(*x));
+revisable_impl!(u64, |hasher: &mut RevisionHasher, x: &u64| hasher
+    .write_u64(*x));
+revisable_impl!(u128, |hasher: &mut RevisionHasher, x: &u128| hasher
+    .write_u128(*x));
+revisable_impl!(usize, |hasher: &mut RevisionHasher, x: &usize| hasher
+    .write_usize(*x));
+revisable_impl!(i8, |hasher: &mut RevisionHasher, x: &i8| hasher
+    .write_i8(*x));
+revisable_impl!(i16, |hasher: &mut RevisionHasher, x: &i16| hasher
+    .write_i16(*x));
+revisable_impl!(i32, |hasher: &mut RevisionHasher, x: &i32| hasher
+    .write_i32(*x));
+revisable_impl!(i64, |hasher: &mut RevisionHasher, x: &i64| hasher
+    .write_i64(*x));
+revisable_impl!(i128, |hasher: &mut RevisionHasher, x: &i128| hasher
+    .write_i128(*x));
+revisable_impl!(isize, |hasher: &mut RevisionHasher, x: &isize| hasher
+    .write_isize(*x));
+
 /// Blanket implementation for references
 impl<T> Revisable for &T
 where
@@ -125,6 +165,44 @@ where
         hasher.write_revision(self.0.get_revision());
         hasher.write_revision(self.1.get_revision());
         hasher.write_revision(self.2.get_revision());
+        RevisionHash::new(hasher.finish())
+    }
+}
+
+/// Blanket implementation for 4-tuples
+impl<T0, T1, T2, T3> Revisable for (T0, T1, T2, T3)
+where
+    T0: Revisable,
+    T1: Revisable,
+    T2: Revisable,
+    T3: Revisable,
+{
+    fn get_revision(&self) -> RevisionHash {
+        let mut hasher = RevisionHasher::new();
+        hasher.write_revision(self.0.get_revision());
+        hasher.write_revision(self.1.get_revision());
+        hasher.write_revision(self.2.get_revision());
+        hasher.write_revision(self.3.get_revision());
+        RevisionHash::new(hasher.finish())
+    }
+}
+
+/// Blanket implementation for 5-tuples
+impl<T0, T1, T2, T3, T4> Revisable for (T0, T1, T2, T3, T4)
+where
+    T0: Revisable,
+    T1: Revisable,
+    T2: Revisable,
+    T3: Revisable,
+    T4: Revisable,
+{
+    fn get_revision(&self) -> RevisionHash {
+        let mut hasher = RevisionHasher::new();
+        hasher.write_revision(self.0.get_revision());
+        hasher.write_revision(self.1.get_revision());
+        hasher.write_revision(self.2.get_revision());
+        hasher.write_revision(self.3.get_revision());
+        hasher.write_revision(self.4.get_revision());
         RevisionHash::new(hasher.finish())
     }
 }
@@ -339,6 +417,54 @@ impl<T> RevisedProperty<T> {
         let current_revision = (&arg0, &arg1, &arg2).get_revision();
         if self.revision != Some(current_revision) {
             self.value = Some(f(arg0, arg1, arg2));
+            self.revision = Some(current_revision);
+        }
+    }
+
+    /// Update the cache to store the result of calling f(arg0, arg1, arg2, arg3).
+    /// If the function's output from the same arguments is already
+    /// cached, the function is not called and the cache is kept.
+    /// Otherwise, f is called and the cache is written to.
+    /// f is assumed to be a pure function.
+    pub fn refresh4<F, A0, A1, A2, A3>(&mut self, f: F, arg0: A0, arg1: A1, arg2: A2, arg3: A3)
+    where
+        F: Fn(A0, A1, A2, A3) -> T,
+        A0: Revisable,
+        A1: Revisable,
+        A2: Revisable,
+        A3: Revisable,
+    {
+        let current_revision = (&arg0, &arg1, &arg2, &arg3).get_revision();
+        if self.revision != Some(current_revision) {
+            self.value = Some(f(arg0, arg1, arg2, arg3));
+            self.revision = Some(current_revision);
+        }
+    }
+
+    /// Update the cache to store the result of calling f(arg0, arg1, arg2, arg3, arg4).
+    /// If the function's output from the same arguments is already
+    /// cached, the function is not called and the cache is kept.
+    /// Otherwise, f is called and the cache is written to.
+    /// f is assumed to be a pure function.
+    pub fn refresh5<F, A0, A1, A2, A3, A4>(
+        &mut self,
+        f: F,
+        arg0: A0,
+        arg1: A1,
+        arg2: A2,
+        arg3: A3,
+        arg4: A4,
+    ) where
+        F: Fn(A0, A1, A2, A3, A4) -> T,
+        A0: Revisable,
+        A1: Revisable,
+        A2: Revisable,
+        A3: Revisable,
+        A4: Revisable,
+    {
+        let current_revision = (&arg0, &arg1, &arg2, &arg3, &arg4).get_revision();
+        if self.revision != Some(current_revision) {
+            self.value = Some(f(arg0, arg1, arg2, arg3, arg4));
             self.revision = Some(current_revision);
         }
     }
